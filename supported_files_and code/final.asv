@@ -1,0 +1,45 @@
+clear
+clc
+
+delta_t = 1;
+
+M = [1 0 0 0.033; 0 1 0 0; 0 0 1 0.6546; 0 0 0 1];
+Blist = [0 0 0 0 0; 0 -1 -1 -1 0; 1 0 0 0 1;0 -0.5076 -0.3526 -0.2176 0; 0.033 0 0 0 0; 0 0 0 0 0];
+Tbo = [1 0 0 0.1662; 0 1 0 0; 0 0 1 0.0026; 0 0 0 1];
+
+store2 = [];
+
+val = [ -0.55 -0.5 0.1 0.5 -0.2  0 -0.2 0 0 0 0 0];
+%val = [ 0 0 0 0 0  0 0 0 0 0 0 0];
+%val = [1_theta 2_x 3_y 4_j1 5_j2 6_j3 7_j4 8_j5 9_u1 10_u2 11_u3 12_u4 ]
+
+X=get_tsb(val,M,Blist,Tbo)
+ref_trajectory = TrajectoryGenerator();
+
+err=[];
+speed_store = [];
+test_start = get_X(ref_trajectory(1,:))
+for i =1 :size(ref_trajectory)-1
+%val
+
+Xd = get_X(ref_trajectory(i,:));
+Xdnx = get_X(ref_trajectory(i+1,:));   
+
+[speed Xerr] = FeedbackControl(Xd, Xdnx,X,val,delta_t,val);
+err = [err ; Xerr];
+
+[store,val]= NextState(speed(1),speed(2),speed(3),speed(4),speed(5),speed(6),speed(7),speed(8),speed(9),val);
+speed_store = [speed_store; speed'];
+X = get_tsb(val,M,Blist,Tbo);
+
+ad = size(store,1);
+
+o = ones(ad,1);
+
+o(:,1) = o(:,1) * ref_trajectory(i,13);
+store = [store o];
+store2 = [store2;store];
+%store2
+end
+figure
+csvwrite("task2.csv",store2);
